@@ -1,0 +1,44 @@
+classify_task:
+  description: >
+    Read these invoice lines: {invoice_lines}.
+    For each line, choose exactly one account from this chart only: {chart_of_accounts}.
+    Never invent an account number. Give the account number, account name,
+    a confidence from 0 to 1, and a one-sentence reason.
+    Only give an alternative if confidence is below 0.7, and it must also be from the chart.
+  expected_output: >
+    A table with one row per invoice line and the columns: line, account number,
+    account name, confidence, reason, alternative.
+  agent: invoice_classifier
+
+vat_task:
+  description: >
+    Allowed VAT rates: {vat_rates}.
+    For each line, mark FLAG only if its VAT rate is NOT in the allowed list,
+    or the amount is clearly inconsistent. Otherwise mark OK.
+    Do not judge the account choice. Do not suggest other accounts.
+    Keep the confidence column from the classification table.
+  expected_output: >
+    The same table with two added columns: vat_status (OK or FLAG) and vat_note.
+    Keep every column from the classification, including confidence.
+  agent: vat_checker
+  context:
+    - classify_task
+
+report_task:
+  description: >
+    Write the final review for a business owner. Start with one summary sentence
+    giving how many lines were reviewed and how many need a manual check.
+    Show the confidence for every line.
+    List a line under "Needs your check" only if vat_status is FLAG
+    or confidence is below 0.7. Give each one a suggested next step.
+    End with the disclaimer that this is a draft suggestion and not accounting
+    or tax advice.
+  expected_output: >
+    A short Markdown report with a summary sentence, a "Needs your check" list,
+    a "Looks fine" list with confidence per line, and the disclaimer.
+    Maximum 200 words.
+  agent: review_reporter
+  context:
+    - classify_task
+    - vat_task
+  output_file: output/review.md

@@ -1,54 +1,37 @@
-# InvoiceReview Crew
+# Invoice Review Crew
 
-Welcome to the InvoiceReview Crew project, powered by [crewAI](https://crewai.com). This template is designed to help you set up a multi-agent AI system with ease, leveraging the powerful and flexible framework provided by crewAI. Our goal is to enable your agents to collaborate effectively on complex tasks, maximizing their collective intelligence and capabilities.
+Three CrewAI agents review Swiss SME invoice lines (synthetic data only):
 
-## Installation
+1. Classifier: assigns each line to one account from a chart you supply.
+2. VAT checker: flags lines whose VAT rate is not in the allowed list.
+3. Reporter: writes a short review for a business owner, with confidence per line.
 
-Ensure you have Python >=3.10 <3.14 installed on your system. This project uses [UV](https://docs.astral.sh/uv/) for dependency management and package handling, offering a seamless setup and execution experience.
+Low-confidence or flagged lines are routed to a human. The crew never books anything.
 
-First, if you haven't already, install uv:
+## Run locally
 
-```bash
-pip install uv
-```
+Needs Ollama and a pulled model:
 
-Next, navigate to your project directory and install the dependencies:
+    ollama pull qwen2.5:7b
+    uv sync
+    uv run python -m crewai run
 
-(Optional) Lock the dependencies and install them by using the CLI command:
-```bash
-crewai install
-```
-### Customizing
+Edit the invoice lines, chart and VAT rates in src/invoice_review/main.py.
+Agents and tasks are in src/invoice_review/config/. No API key is needed for local Ollama.
+If you use a hosted model instead, put its key in a local .env file (never committed).
 
-**Add your `OPENAI_API_KEY` into the `.env` file**
+## Measure accuracy
 
-- Modify `src/invoice_review/config/agents.yaml` to define your agents
-- Modify `src/invoice_review/config/tasks.yaml` to define your tasks
-- Modify `src/invoice_review/crew.py` to add your own logic, tools and specific args
-- Modify `src/invoice_review/main.py` to add custom inputs for your agents and tasks
+    uv run python eval.py
 
-## Running the Project
+Prompted qwen2.5:7b scored 85% (17/20) on a 20-line smoke test. This is not a benchmark.
 
-To kickstart your crew of AI agents and begin task execution, run this from the root folder of your project:
+## Related
 
-```bash
-$ crewai run
-```
+- Fine-tuned 0.5B account suggester: https://github.com/ChadSaglam/swiss-bookkeeping-ai
+- Dataset: https://huggingface.co/datasets/ChadSaglam/swiss-sme-bookkeeping-dataset
 
-This command initializes the invoice-review Crew, assembling the agents and assigning them tasks as defined in your configuration.
+## Limits
 
-This example, unmodified, will run the create a `report.md` file with the output of a research on LLMs in the root folder.
-
-## Understanding Your Crew
-
-The invoice-review Crew is composed of multiple AI agents, each with unique roles, goals, and tools. These agents collaborate on a series of tasks, defined in `config/tasks.yaml`, leveraging their collective skills to achieve complex objectives. The `config/agents.yaml` file outlines the capabilities and configurations of each agent in your crew.
-
-## Support
-
-For support, questions, or feedback regarding the InvoiceReview Crew or crewAI.
-- Visit our [documentation](https://docs.crewai.com)
-- Reach out to us through our [GitHub repository](https://github.com/joaomdmoura/crewai)
-- [Join our Discord](https://discord.com/invite/X4JWnZnxPb)
-- [Chat with our docs](https://chatg.pt/DWjSBZn)
-
-Let's create wonders together with the power and simplicity of crewAI.
+Synthetic data and a simplified six-account test chart. A 7B model follows instructions
+imperfectly (it sometimes adds alternatives or extra text). Not accounting or tax advice.
